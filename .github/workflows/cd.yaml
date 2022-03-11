@@ -1,0 +1,41 @@
+name: Decodable Flink CD
+on:
+  push:
+    branches:
+      - 'decodable-main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          cache: maven
+      - name: Build
+        run: mvn clean install -B -DskipTests
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Flink Version
+        run: echo "FLINK_VERSION=$(git -C ${{ github.workspace }} describe --tags --abbrev=0 | cut -c9-)" >> $GITHUB_ENV
+      - name: Decodable Production Flink Dist Name
+        run: |
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+          echo "FLINK_DIST_NAME=decodable-flink-${{ env.FLINK_VERSION }}-$git_hash.tgz" >> $GITHUB_ENV
+      - name: Decodable Flink dist
+        run: |
+          tar -czf ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} -C ${{ github.workspace }}/build-target/ .
+          aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/dist/${{ env.FLINK_VERSION }}/
