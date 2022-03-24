@@ -1590,6 +1590,9 @@ under the License.
 
 						<!-- AWS SDK config that does not support license headers -->
 						<exclude>**/awssdk/global/handlers/execution.interceptors</exclude>
+
+						<!-- Decodable -->
+						<exclude>**/README-decodable.md</exclude>
 					</excludes>
 				</configuration>
 			</plugin>

@@ -1,3 +1,9 @@
+# Decodable Flink
+
+Decodable Flink is Decodable internal fork of Flink.
+
+Learn more about [Decodable Flink](README-decodable.md)
+
 # Apache Flink
 
 Apache Flink is an open source stream processing framework with powerful stream- and batch-processing capabilities.
