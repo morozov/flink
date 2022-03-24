@@ -18,6 +18,7 @@
 
 package org.apache.flink.runtime.taskmanager;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.runtime.checkpoint.channel.ChannelStateWriter;
 import org.apache.flink.runtime.checkpoint.channel.InputChannelInfo;
@@ -150,11 +151,11 @@ public class InputGateWithMetrics extends IndexedInputGate {
         inputGate.finishReadRecoveredState();
     }
 
-    private BufferOrEvent updateMetrics(BufferOrEvent bufferOrEvent) {
-        int incomingDataSize = bufferOrEvent.getSize();
-
-        numBytesIn.inc(incomingDataSize);
-
+    @VisibleForTesting
+    BufferOrEvent updateMetrics(BufferOrEvent bufferOrEvent) {
+        if (bufferOrEvent.isBuffer()) {
+            numBytesIn.inc(bufferOrEvent.getSize());
+        }
         return bufferOrEvent;
     }
 }
