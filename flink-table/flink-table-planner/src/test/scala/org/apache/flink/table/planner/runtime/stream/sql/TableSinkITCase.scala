@@ -17,10 +17,10 @@
  */
 package org.apache.flink.table.planner.runtime.stream.sql
 
-import org.apache.flink.table.planner.expressions.utils.TestNonDeterministicUdf
 import org.apache.flink.table.planner.factories.TestValuesTableFactory
 import org.apache.flink.table.planner.runtime.utils._
 import org.apache.flink.table.planner.runtime.utils.BatchTestBase.row
+import org.apache.flink.table.planner.runtime.utils.JavaUserDefinedScalarFunctions.NonDeterministicUdf
 import org.apache.flink.table.planner.runtime.utils.StreamingWithStateTestBase.StateBackendMode
 
 import org.junit.Assert.assertEquals
@@ -174,7 +174,7 @@ class TableSinkITCase(mode: StateBackendMode) extends StreamingWithStateTestBase
 
   @Test
   def testChangelogSourceWithNonDeterministicFuncSinkWithDifferentPk(): Unit = {
-    tEnv.createTemporaryFunction("ndFunc", new TestNonDeterministicUdf)
+    tEnv.createTemporaryFunction("ndFunc", new NonDeterministicUdf)
     tEnv.executeSql("""
                       |CREATE TABLE sink_with_pk (
                       |  user_id STRING,

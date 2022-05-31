@@ -188,7 +188,11 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
         if (needMaterialization) {
             sinkTransform =
                     applyUpsertMaterialize(
-                            sinkTransform, primaryKeys, sinkParallelism, config, physicalRowType,
+                            sinkTransform,
+                            primaryKeys,
+                            sinkParallelism,
+                            config,
+                            physicalRowType,
                             inputUpsertKey);
         }
 
@@ -406,8 +410,7 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
                         ? null
                         : new EqualiserCodeGenerator(
                                         RowTypeUtils.projectRowType(
-                                                physicalRowType, inputUpsertKey),
-                                        classLoader)
+                                                physicalRowType, inputUpsertKey))
                                 .generateRecordEqualiser("SinkMaterializeUpsertKeyEqualiser");
 
         SinkUpsertMaterializer operator =

@@ -17,7 +17,7 @@
  */
 package org.apache.flink.table.planner.plan.metadata
 
-import org.apache.flink.table.catalog.{CatalogTable, ResolvedCatalogBaseTable, ResolvedCatalogTable}
+import org.apache.flink.table.catalog.{CatalogTable, ResolvedCatalogBaseTable}
 import org.apache.flink.table.planner._
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.nodes.calcite.{Expand, Rank, WatermarkAssigner, WindowAggregate}
@@ -110,6 +110,14 @@ class FlinkRelMdUniqueKeys private extends MetadataHandler[BuiltInMetadata.Uniqu
     val input = calc.getInput
     val projects = calc.getProgram.getProjectList.map(calc.getProgram.expandLocalRef)
     getProjectUniqueKeys(projects, input, mq, ignoreNulls)
+  }
+
+  def getUniqueKeys(
+      rel: StreamPhysicalMiniBatchAssigner,
+      mq: RelMetadataQuery,
+      ignoreNulls: Boolean): JSet[ImmutableBitSet] = {
+
+    mq.getUniqueKeys(rel.getInput, ignoreNulls)
   }
 
   private def getProjectUniqueKeys(

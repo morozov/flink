@@ -504,4 +504,49 @@ class JoinTest extends TableTestBase {
       ExplainDetail.CHANGELOG_MODE
     )
   }
+
+  @Test
+  def testJoinCanAccessSourcePkWithMiniBatchAssigner(): Unit = {
+    // test for FLINK-27851
+    util.tableEnv.executeSql("""
+                               |create table left_table (
+                               | a varchar primary key,
+                               | b int
+                               |) with (
+                               | 'connector' = 'values'
+                               |)
+                               |""".stripMargin)
+
+    util.tableEnv.executeSql("""
+                               |create table right_table (
+                               | c varchar primary key,
+                               | d int
+                               |) with (
+                               | 'connector' = 'values'
+                               |)
+                               |""".stripMargin)
+
+    util.tableEnv.executeSql("""
+                               |create table sink (
+                               | e varchar primary key,
+                               | f int,
+                               | g int
+                               |) with (
+                               | 'connector' = 'values'
+                               |)
+                               |""".stripMargin)
+
+    util.tableEnv.getConfig.getConfiguration
+      .setBoolean("table.exec.mini-batch.enabled", java.lang.Boolean.valueOf(true))
+    util.tableEnv.getConfig.getConfiguration.setString("table.exec.mini-batch.allow-latency", "10s")
+
+    util.verifyExplainInsert(
+      """
+        |insert into sink
+        |select left_table.a, left_table.b, right_table.d
+        | from left_table
+        | join right_table on left_table.a = right_table.c
+        |""".stripMargin
+    )
+  }
 }
