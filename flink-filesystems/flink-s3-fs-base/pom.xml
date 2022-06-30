@@ -33,8 +33,17 @@ under the License.
 
 	<properties>
 		<fs.s3.aws.version>1.11.951</fs.s3.aws.version>
+		<fs.hadoop-aws.decodable.version>3.2.2-dcd</fs.hadoop-aws.decodable.version>
 		<japicmp.skip>true</japicmp.skip>
 	</properties>
+
+	<!-- Add AWS CodeArtifact for the hadoop-aws Decodable fork -->
+	<repositories>
+		<repository>
+			<id>decodable-mvn-releases-local</id>
+			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-releases-local/</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 
@@ -214,7 +223,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-aws</artifactId>
-			<version>${fs.hadoopshaded.version}</version>
+			<version>${fs.hadoop-aws.decodable.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.amazonaws</groupId>

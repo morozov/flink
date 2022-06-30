@@ -19,10 +19,16 @@
 package org.apache.flink.fs.s3hadoop;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystemFactory;
 import org.apache.flink.runtime.util.HadoopConfigLoader;
 
 import org.junit.Test;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ServiceLoader;
+
+import static org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_ARN;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -79,6 +85,33 @@ public class HadoopS3FileSystemTest {
         conf.setString("s3.access-key", "clé d'accès");
         conf.setString("s3.secret-key", "clef secrète");
         checkHadoopAccessKeys(conf, "clé d'accès", "clef secrète");
+    }
+
+    @Test
+    public void testQueryParams() throws URISyntaxException {
+        var uri =
+                new URI(
+                        "s3a://authority?fs.s3a.assumed.role.arn=someArn&fs.s3a.assumed.role.externalId=someId");
+        var result = S3FileSystemFactory.parseQueryParams(uri);
+        assertEquals("someArn", result.get(ASSUMED_ROLE_ARN));
+    }
+
+    @Test
+    public void testUriResult() throws URISyntaxException {
+        ServiceLoader<FileSystemFactory> serviceLoader =
+                ServiceLoader.load(FileSystemFactory.class);
+        S3FileSystemFactory s3Factory =
+                (S3FileSystemFactory)
+                        serviceLoader.stream()
+                                .filter(fsf -> "s3".equals(fsf.get().getScheme()))
+                                .findFirst()
+                                .get()
+                                .get();
+        var inputUri =
+                new URI(
+                        "s3a://authority?fs.s3a.assumed.role.arn=someArn&fs.s3a.assumed.role.externalId=someId");
+        var resultUri = s3Factory.getInitURI(inputUri, new org.apache.hadoop.conf.Configuration());
+        assertEquals("s3a://authority", resultUri.toString());
     }
 
     private static void checkHadoopAccessKeys(
