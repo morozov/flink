@@ -110,7 +110,7 @@ public class S3FileSystemFactory extends AbstractS3FileSystemFactory {
         an account identifier to avoid potential collisions.
          */
         try {
-            var queryParams = parseQueryParams(fsUri);
+            Map<String, String> queryParams = parseQueryParams(fsUri);
             if (queryParams.isEmpty()) {
                 return fsUri;
             }
@@ -126,7 +126,7 @@ public class S3FileSystemFactory extends AbstractS3FileSystemFactory {
                             });
 
             // Remove the query parameters now that they've been consumed
-            var cleanURI =
+            URI cleanURI =
                     new URI(fsUri.getScheme(), fsUri.getAuthority(), fsUri.getPath(), null, null);
             LOG.debug(
                     "Consumed and applied all 'fs.s3a' parameters from URI. Returning clean URI: {}",

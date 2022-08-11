@@ -37,14 +37,6 @@ under the License.
 		<japicmp.skip>true</japicmp.skip>
 	</properties>
 
-	<!-- Add AWS CodeArtifact for the hadoop-aws Decodable fork -->
-	<repositories>
-		<repository>
-			<id>decodable-mvn-releases-local</id>
-			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-releases-local/</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
 
 		<!-- Flink's file system abstraction (only compiled against, not bundled) -->

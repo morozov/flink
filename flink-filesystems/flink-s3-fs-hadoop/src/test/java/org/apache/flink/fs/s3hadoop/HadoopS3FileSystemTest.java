@@ -26,7 +26,9 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 
 import static org.apache.hadoop.fs.s3a.Constants.ASSUMED_ROLE_ARN;
 import static org.junit.Assert.assertEquals;
@@ -89,10 +91,10 @@ public class HadoopS3FileSystemTest {
 
     @Test
     public void testQueryParams() throws URISyntaxException {
-        var uri =
+        URI uri =
                 new URI(
                         "s3a://authority?fs.s3a.assumed.role.arn=someArn&fs.s3a.assumed.role.externalId=someId");
-        var result = S3FileSystemFactory.parseQueryParams(uri);
+        Map<String, String> result = S3FileSystemFactory.parseQueryParams(uri);
         assertEquals("someArn", result.get(ASSUMED_ROLE_ARN));
     }
 
@@ -100,17 +102,17 @@ public class HadoopS3FileSystemTest {
     public void testUriResult() throws URISyntaxException {
         ServiceLoader<FileSystemFactory> serviceLoader =
                 ServiceLoader.load(FileSystemFactory.class);
+
         S3FileSystemFactory s3Factory =
                 (S3FileSystemFactory)
-                        serviceLoader.stream()
-                                .filter(fsf -> "s3".equals(fsf.get().getScheme()))
+                        StreamSupport.stream(serviceLoader.spliterator(), false)
+                                .filter(fsf -> "s3".equals(fsf.getScheme()))
                                 .findFirst()
-                                .get()
                                 .get();
-        var inputUri =
+        URI inputUri =
                 new URI(
                         "s3a://authority?fs.s3a.assumed.role.arn=someArn&fs.s3a.assumed.role.externalId=someId");
-        var resultUri = s3Factory.getInitURI(inputUri, new org.apache.hadoop.conf.Configuration());
+        URI resultUri = s3Factory.getInitURI(inputUri, new org.apache.hadoop.conf.Configuration());
         assertEquals("s3a://authority", resultUri.toString());
     }
 

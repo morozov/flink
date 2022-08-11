@@ -60,6 +60,11 @@ under the License.
 				<enabled>false</enabled>
 			</releases>
 		</repository>
+		<!-- Add AWS CodeArtifact for the hadoop-aws Decodable fork -->
+		<repository>
+			<id>decodable-mvn-releases-local</id>
+			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-releases-local/</url>
+		</repository>
 	</repositories>
 
 	<distributionManagement>
@@ -69,8 +74,8 @@ under the License.
 			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-releases-local/</url>
 		</repository>
 		<snapshotRepository>
-			<id>decodable-mvn-releases-local</id>
-			<name>decodable-mvn-releases-local</name>
+			<id>decodable-mvn-snapshots-local</id>
+			<name>decodable-mvn-snapshots-local</name>
 			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-snapshots-local/</url>
 		</snapshotRepository>
 	</distributionManagement>
