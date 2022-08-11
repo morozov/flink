@@ -62,6 +62,19 @@ under the License.
 		</repository>
 	</repositories>
 
+	<distributionManagement>
+		<repository>
+			<id>decodable-mvn-releases-local</id>
+			<name>decodable-mvn-releases-local</name>
+			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-releases-local/</url>
+		</repository>
+		<snapshotRepository>
+			<id>decodable-mvn-releases-local</id>
+			<name>decodable-mvn-releases-local</name>
+			<url>https://decodable-671293015970.d.codeartifact.us-west-2.amazonaws.com/maven/decodable-mvn-snapshots-local/</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 	<modules>
 		<module>flink-annotations</module>
 		<module>flink-architecture-tests</module>

@@ -1,13 +1,11 @@
-name: Decodable Flink CD
+name: Decodable Flink CI
 on:
-  push:
-    branches:
-      - 'decodable-main'
+  - pull_request
+  - push
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -43,12 +41,21 @@ jobs:
       - name: Build
         run: mvn clean install -B -DskipTests
       - name: Flink Version
-        run: echo "FLINK_VERSION=$(git -C ${{ github.workspace }} describe --tags --abbrev=0 | cut -c9-)" >> $GITHUB_ENV
-      - name: Decodable Production Flink Dist Name
+        run: echo "FLINK_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      - name: Decodable Flink Dist Name
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
           echo "FLINK_DIST_NAME=decodable-flink-${{ env.FLINK_VERSION }}-$git_hash.tgz" >> $GITHUB_ENV
       - name: Decodable Flink dist
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/decodable') }}
         run: |
+          set -x
+          TARGET="ci-build"
+          if [[ "decodable-main" == "${{ github.head_ref }}" ]]; then
+            TARGET="dist"
+          fi
           tar -czf ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} -C ${{ github.workspace }}/build-target/ .
-          aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/dist/${{ env.FLINK_VERSION }}/
+          aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/$TARGET/${{ github.head_ref }}/
+      - name: Deploy maven artifacts
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/decodable') }}
+        run: mvn deploy -DskipTests
