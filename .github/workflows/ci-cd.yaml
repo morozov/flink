@@ -39,7 +39,7 @@ jobs:
               }
             ]
       - name: Build
-        run: mvn clean install -B -DskipTests
+        run: mvn clean install -B -DskipTests -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
       - name: Flink Version
         run: echo "FLINK_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Decodable Flink Dist Name
