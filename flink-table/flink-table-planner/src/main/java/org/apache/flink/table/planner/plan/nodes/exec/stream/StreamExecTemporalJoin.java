@@ -264,23 +264,12 @@ public class StreamExecTemporalJoin extends ExecNodeBase<RowData>
                     maxRetentionTime,
                     isLeftOuterJoin);
         } else {
-            if (isTemporalFunctionJoin) {
-                return new TemporalProcessTimeJoinOperator(
-                        InternalTypeInfo.of(rightInputType),
-                        generatedJoinCondition,
-                        minRetentionTime,
-                        maxRetentionTime,
-                        isLeftOuterJoin);
-            } else {
-                // The exsiting TemporalProcessTimeJoinOperator has already supported temporal table
-                // join.
-                // However, the semantic of this implementation is problematic, because the join
-                // processing
-                // for left stream doesn't wait for the complete snapshot of temporal table, this
-                // may
-                // mislead users in production environment. See FLINK-19830 for more details.
-                throw new TableException("Processing-time temporal join is not supported yet.");
-            }
+            return new TemporalProcessTimeJoinOperator(
+                    InternalTypeInfo.of(rightInputType),
+                    generatedJoinCondition,
+                    minRetentionTime,
+                    maxRetentionTime,
+                    isLeftOuterJoin);
         }
     }
 }
