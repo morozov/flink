@@ -56,11 +56,11 @@ jobs:
         run: |
           set -x
           TARGET="ci-build"
-          if [[ "decodable-main" == "${{ github.head_ref }}" ]]; then
+          if [[ "${{ github.ref_name }}" =~ ^decodable.* ]]; then
             TARGET="dist"
           fi
           tar -czf ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} -C ${{ github.workspace }}/build-target/ .
-          aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/$TARGET/${{ github.head_ref }}/
+          aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/${TARGET}/${{ github.ref_name }}/
       - name: Deploy maven artifacts
         if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/decodable') }}
         run: ./mvnw deploy -DskipTests -Pskip-webui-build
