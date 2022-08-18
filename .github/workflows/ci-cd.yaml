@@ -44,7 +44,7 @@ jobs:
             }
             ]
       - name: Build
-        run: ./mvnw clean install -B -DskipTests -Pskip-webui-build -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+        run: ./mvnw clean install -B -DskipTests -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
       - name: Flink Version
         run: echo "FLINK_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Decodable Flink Dist Name
@@ -63,4 +63,4 @@ jobs:
           aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/${TARGET}/${{ github.ref_name }}/
       - name: Deploy maven artifacts
         if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/decodable') }}
-        run: ./mvnw deploy -DskipTests -Pskip-webui-build
+        run: ./mvnw deploy -DskipTests
