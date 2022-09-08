@@ -21,11 +21,13 @@ import org.apache.flink.table.catalog.ContextResolvedTable
 import org.apache.flink.table.connector.sink.DynamicTableSink
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.abilities.sink.SinkAbilitySpec
+import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 import org.apache.flink.table.planner.plan.nodes.calcite.Sink
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.spec.DynamicTableSinkSpec
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecSink
 import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, RelDescriptionWriterImpl}
+import org.apache.flink.table.planner.plan.utils.{ChangelogPlanUtils, UpsertKeyUtil}
 import org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTableConfig
 
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
@@ -82,6 +84,12 @@ class StreamPhysicalSink(
     val tableSinkSpec =
       new DynamicTableSinkSpec(contextResolvedTable, util.Arrays.asList(abilitySpecs: _*))
     tableSinkSpec.setTableSink(tableSink)
+    // no need to call getUpsertKeysInKeyGroupRange here because there's no exchange before sink,
+    // and only add exchange in exec sink node.
+    val inputUpsertKeys = FlinkRelMetadataQuery
+      .reuseOrCreate(cluster.getMetadataQuery)
+      .getUpsertKeys(inputRel)
+
     new StreamExecSink(
       unwrapTableConfig(this),
       tableSinkSpec,
@@ -89,7 +97,8 @@ class StreamPhysicalSink(
       InputProperty.DEFAULT,
       FlinkTypeFactory.toLogicalRowType(getRowType),
       upsertMaterialize,
-      getDescriptionWithUpsert(upsertMaterialize))
+      UpsertKeyUtil.getSmallestKey(inputUpsertKeys),
+      getRelDetailedDescription)
   }
 
   /** The inputChangelogMode can only be obtained in translateToExecNode phase. */

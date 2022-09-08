@@ -61,6 +61,7 @@ import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecNode;
 import org.apache.flink.table.planner.plan.nodes.exec.utils.ExecNodeUtil;
 import org.apache.flink.table.planner.plan.nodes.exec.utils.TransformationMetadata;
 import org.apache.flink.table.planner.plan.utils.KeySelectorUtil;
+import org.apache.flink.table.planner.typeutils.RowTypeUtils;
 import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.table.runtime.generated.GeneratedRecordEqualiser;
 import org.apache.flink.table.runtime.keyselector.RowDataKeySelector;
@@ -140,7 +141,8 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
             Transformation<RowData> inputTransform,
             DynamicTableSink tableSink,
             int rowtimeFieldIndex,
-            boolean upsertMaterialize) {
+            boolean upsertMaterialize,
+            int[] inputUpsertKey) {
         final ResolvedSchema schema = tableSinkSpec.getContextResolvedTable().getResolvedSchema();
         final SinkRuntimeProvider runtimeProvider =
                 tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(isBounded));
@@ -186,7 +188,8 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
         if (needMaterialization) {
             sinkTransform =
                     applyUpsertMaterialize(
-                            sinkTransform, primaryKeys, sinkParallelism, config, physicalRowType);
+                            sinkTransform, primaryKeys, sinkParallelism, config, physicalRowType,
+                            inputUpsertKey);
         }
 
         return (Transformation<Object>)
@@ -393,16 +396,28 @@ public abstract class CommonExecSink extends ExecNodeBase<Object>
             int[] primaryKeys,
             int sinkParallelism,
             ExecNodeConfig config,
-            RowType physicalRowType) {
-        GeneratedRecordEqualiser equaliser =
+            RowType physicalRowType,
+            int[] inputUpsertKey) {
+        final GeneratedRecordEqualiser rowEqualiser =
                 new EqualiserCodeGenerator(physicalRowType)
                         .generateRecordEqualiser("SinkMaterializeEqualiser");
+        final GeneratedRecordEqualiser upsertKeyEqualiser =
+                inputUpsertKey == null
+                        ? null
+                        : new EqualiserCodeGenerator(
+                                        RowTypeUtils.projectRowType(
+                                                physicalRowType, inputUpsertKey),
+                                        classLoader)
+                                .generateRecordEqualiser("SinkMaterializeUpsertKeyEqualiser");
+
         SinkUpsertMaterializer operator =
                 new SinkUpsertMaterializer(
                         StateConfigUtil.createTtlConfig(
                                 config.get(ExecutionConfigOptions.IDLE_STATE_RETENTION).toMillis()),
                         InternalSerializers.create(physicalRowType),
-                        equaliser);
+                        rowEqualiser,
+                        upsertKeyEqualiser,
+                        inputUpsertKey);
         final String[] fieldNames = physicalRowType.getFieldNames().toArray(new String[0]);
         final List<String> pkFieldNames =
                 Arrays.stream(primaryKeys)
