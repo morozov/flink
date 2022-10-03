@@ -1062,6 +1062,11 @@ public class StreamingJobGraphGenerator {
         StreamNode upStreamVertex = streamGraph.getSourceVertex(edge);
         StreamNode downStreamVertex = streamGraph.getTargetVertex(edge);
 
+        if (upStreamVertex.getOperatorName().contains("Writer")
+                && downStreamVertex.getOperatorName().contains("Committer")) {
+            return true;
+        }
+
         if (!(upStreamVertex.isSameSlotSharingGroup(downStreamVertex)
                 && areOperatorsChainable(upStreamVertex, downStreamVertex, streamGraph)
                 && arePartitionerAndExchangeModeChainable(
