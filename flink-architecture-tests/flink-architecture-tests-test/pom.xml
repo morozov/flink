@@ -26,7 +26,7 @@ under the License.
 	<parent>
 		<groupId>org.apache.flink</groupId>
 		<artifactId>flink-architecture-tests</artifactId>
-		<version>1.15.2-deco1</version>
+		<version>1.15.2-deco2</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
