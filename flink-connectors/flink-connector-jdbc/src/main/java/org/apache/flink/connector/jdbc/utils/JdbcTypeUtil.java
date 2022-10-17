@@ -55,6 +55,7 @@ import static org.apache.flink.table.types.logical.LogicalTypeRoot.FLOAT;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.INTEGER;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.SMALLINT;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
+import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITH_TIME_ZONE;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIME_WITHOUT_TIME_ZONE;
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TINYINT;
@@ -104,6 +105,7 @@ public class JdbcTypeUtil {
                     .put(DATE, Types.DATE)
                     .put(TIMESTAMP_WITHOUT_TIME_ZONE, Types.TIMESTAMP)
                     .put(TIMESTAMP_WITH_TIME_ZONE, Types.TIMESTAMP_WITH_TIMEZONE)
+                    .put(TIMESTAMP_WITH_LOCAL_TIME_ZONE, Types.TIMESTAMP_WITH_TIMEZONE)
                     .put(TIME_WITHOUT_TIME_ZONE, Types.TIME)
                     .put(DECIMAL, Types.DECIMAL)
                     .put(ARRAY, Types.ARRAY)
