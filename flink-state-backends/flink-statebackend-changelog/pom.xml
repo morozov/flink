@@ -27,7 +27,7 @@ under the License.
 	<parent>
 		<groupId>org.apache.flink</groupId>
 		<artifactId>flink-state-backends</artifactId>
-		<version>1.15.2-deco3</version>
+		<version>1.15.2-deco4</version>
 		<relativePath>..</relativePath>
 	</parent>
 
