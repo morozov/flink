@@ -85,6 +85,10 @@ public class KafkaWriterITCase {
     private static final String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
     private static final Network NETWORK = Network.newNetwork();
     private static final String KAFKA_METRIC_WITH_GROUP_NAME = "KafkaProducer.incoming-byte-total";
+    private static final String KAFKA_METRIC_WITH_PRODUCER_GROUP =
+            "KafkaProducer.producer-metrics.incoming-byte-total";
+    private static final String KAFKA_METRIC_WITH_PRODUCER_NODE_GROUP =
+            "KafkaProducer.producer-node-metrics.incoming-byte-total";
     private static final SinkWriter.Context SINK_WRITER_CONTEXT = new DummySinkWriterContext();
     private String topic;
 
@@ -120,6 +124,10 @@ public class KafkaWriterITCase {
         try (final KafkaWriter<Integer> ignored =
                 createWriterWithConfiguration(getKafkaClientConfiguration(), guarantee)) {
             assertThat(metricListener.getGauge(KAFKA_METRIC_WITH_GROUP_NAME).isPresent()).isTrue();
+            assertThat(metricListener.getGauge(KAFKA_METRIC_WITH_PRODUCER_GROUP).isPresent())
+                    .isTrue();
+            assertThat(metricListener.getGauge(KAFKA_METRIC_WITH_PRODUCER_NODE_GROUP).isPresent())
+                    .isTrue();
         }
     }
 

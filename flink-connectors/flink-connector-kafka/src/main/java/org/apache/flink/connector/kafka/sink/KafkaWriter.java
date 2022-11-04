@@ -57,6 +57,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -90,7 +91,8 @@ class KafkaWriter<IN>
     private final Callback deliveryCallback;
     private final KafkaRecordSerializationSchema.KafkaSinkContext kafkaSinkContext;
 
-    private final Map<String, KafkaMetricMutableWrapper> previouslyCreatedMetrics = new HashMap<>();
+    private final Map<MetricKey, KafkaMetricMutableWrapper> previouslyCreatedMetrics =
+            new HashMap<>();
     private final SinkWriterMetricGroup metricGroup;
     private final boolean disabledMetrics;
     private final Counter numRecordsOutCounter;
@@ -350,17 +352,26 @@ class KafkaWriter<IN>
     private Consumer<Map.Entry<MetricName, ? extends Metric>> initMetric(
             MetricGroup kafkaMetricGroup) {
         return (entry) -> {
-            final String name = entry.getKey().name();
+            final MetricName metricName = entry.getKey();
+            final String name = metricName.name();
+            final String group = metricName.group();
             final Metric metric = entry.getValue();
-            if (previouslyCreatedMetrics.containsKey(name)) {
-                final KafkaMetricMutableWrapper wrapper = previouslyCreatedMetrics.get(name);
-                wrapper.setKafkaMetric(metric);
-            } else {
-                final KafkaMetricMutableWrapper wrapper = new KafkaMetricMutableWrapper(metric);
-                previouslyCreatedMetrics.put(name, wrapper);
-                kafkaMetricGroup.gauge(name, wrapper);
-            }
+
+            registerMetric(kafkaMetricGroup, name, metric);
+            registerMetric(kafkaMetricGroup.addGroup(group), name, metric);
         };
+    }
+
+    private void registerMetric(MetricGroup metricGroup, String name, Metric kafkaMetric) {
+        final MetricKey key = new MetricKey(name, metricGroup);
+        if (previouslyCreatedMetrics.containsKey(key)) {
+            final KafkaMetricMutableWrapper wrapper = previouslyCreatedMetrics.get(key);
+            wrapper.setKafkaMetric(kafkaMetric);
+        } else {
+            final KafkaMetricMutableWrapper wrapper = new KafkaMetricMutableWrapper(kafkaMetric);
+            previouslyCreatedMetrics.put(key, wrapper);
+            metricGroup.gauge(key.name, wrapper);
+        }
     }
 
     private long computeSendTime() {
@@ -434,6 +445,33 @@ class KafkaWriter<IN>
                 message += KafkaCommitter.UNKNOWN_PRODUCER_ID_ERROR_MESSAGE;
             }
             throw new FlinkRuntimeException(message, exception);
+        }
+    }
+
+    private static class MetricKey {
+        private final String name;
+        private final MetricGroup metricGroup;
+
+        public MetricKey(String name, MetricGroup metricGroup) {
+            this.name = name;
+            this.metricGroup = metricGroup;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MetricKey that = (MetricKey) o;
+            return Objects.equals(name, that.name) && Objects.equals(metricGroup, that.metricGroup);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, metricGroup);
         }
     }
 }
