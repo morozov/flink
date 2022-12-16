@@ -24,6 +24,8 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.table.catalog.ObjectIdentifier;
 import org.apache.flink.table.types.DataType;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 /** Abstract File system table for providing some common methods. */
@@ -45,7 +47,19 @@ abstract class AbstractFileSystemTable {
         this.tableIdentifier = tableIdentifier;
         this.tableOptions = (Configuration) tableOptions;
         this.physicalRowDataType = physicalRowDataType;
-        this.path = new Path(this.tableOptions.get(FileSystemConnectorOptions.PATH));
+        // Allow parsing the 'path' as a URI, to inject query options (runtime-config) into the
+        // Path object.
+        if (this.tableOptions.get(FileSystemConnectorOptions.PATH_AS_URI)) {
+            try {
+                this.path =
+                        new Path(new URI(this.tableOptions.get(FileSystemConnectorOptions.PATH)));
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Could not parse path as URI", e);
+            }
+        } else {
+            this.path = new Path(this.tableOptions.get(FileSystemConnectorOptions.PATH));
+        }
+
         this.defaultPartName =
                 this.tableOptions.get(FileSystemConnectorOptions.PARTITION_DEFAULT_NAME);
         this.partitionKeys = partitionKeys;

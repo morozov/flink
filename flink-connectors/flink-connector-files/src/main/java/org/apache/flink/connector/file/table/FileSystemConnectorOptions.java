@@ -38,6 +38,12 @@ public class FileSystemConnectorOptions {
     public static final ConfigOption<String> PATH =
             key("path").stringType().noDefaultValue().withDescription("The path of a directory");
 
+    public static final ConfigOption<Boolean> PATH_AS_URI =
+            key("path.as-uri")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Parse path as URI");
+
     public static final ConfigOption<String> PARTITION_DEFAULT_NAME =
             key("partition.default-name")
                     .stringType()

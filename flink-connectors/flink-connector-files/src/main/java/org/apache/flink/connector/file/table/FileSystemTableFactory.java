@@ -124,6 +124,7 @@ public class FileSystemTableFactory implements DynamicTableSourceFactory, Dynami
         options.add(FileSystemConnectorOptions.AUTO_COMPACTION);
         options.add(FileSystemConnectorOptions.COMPACTION_FILE_SIZE);
         options.add(FileSystemConnectorOptions.SINK_PARALLELISM);
+        options.add(FileSystemConnectorOptions.PATH_AS_URI);
         return options;
     }
 
@@ -131,6 +132,7 @@ public class FileSystemTableFactory implements DynamicTableSourceFactory, Dynami
     public Set<ConfigOption<?>> forwardOptions() {
         return Stream.of(
                         FileSystemConnectorOptions.PATH,
+                        FileSystemConnectorOptions.PATH_AS_URI,
                         FileSystemConnectorOptions.PARTITION_DEFAULT_NAME,
                         FileSystemConnectorOptions.SINK_ROLLING_POLICY_FILE_SIZE,
                         FileSystemConnectorOptions.SINK_ROLLING_POLICY_ROLLOVER_INTERVAL,
