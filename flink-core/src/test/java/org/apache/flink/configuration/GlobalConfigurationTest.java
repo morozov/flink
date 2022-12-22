@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -129,6 +131,22 @@ public class GlobalConfigurationTest extends TestLogger {
         assertTrue(GlobalConfiguration.isSensitive("123pasSword"));
         assertTrue(GlobalConfiguration.isSensitive("PasSword"));
         assertTrue(GlobalConfiguration.isSensitive("Secret"));
+        List<String> decodableKeys =
+                Arrays.asList(
+                        "polaris.client-secret",
+                        "client-secret",
+                        "service-key-json",
+                        "auth.basic.password",
+                        "auth.basic.token",
+                        "avro-confluent.basic-auth.user-info",
+                        "key.avro-confluent.basic-auth.user-info",
+                        "value.avro-confluent.basic-auth.user-info",
+                        "kafka.jaas.config",
+                        "properties.ssl.truststore.password",
+                        "properties.ssl.keystore.password");
+        for (String key : decodableKeys) {
+            assertTrue("Key is sensitive: " + key, GlobalConfiguration.isSensitive(key));
+        }
         assertTrue(
                 GlobalConfiguration.isSensitive(
                         "fs.azure.account.key.storageaccount123456.core.windows.net"));
