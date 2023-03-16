@@ -113,6 +113,13 @@ public class CachedSchemaCoderProviderTest {
         assertEquals(bearerAuthCredentialProvider.getBearerToken(null), token);
     }
 
+    @Test
+    public void testCanInstantiatewithLongSchemaId() {
+        Map<String, String> configs = new HashMap<>();
+        configs.put("long-schema-id", "true");
+        CachedSchemaCoderProvider provider = initCachedSchemaCoderProvider(configs);
+    }
+
     private String getAbsolutePath(String path) throws URISyntaxException {
         return CachedSchemaCoderProviderTest.class.getResource(path).toURI().getPath();
     }

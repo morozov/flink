@@ -186,6 +186,60 @@ public class RegistryAvroFormatFactoryTest {
         assertEquals(expectedSer, actualSer);
     }
 
+    @Test
+    public void testSerializationSchemaWithLongSchemaId() {
+        Map<String, String> serOpts = new HashMap<>(EXPECTED_OPTIONAL_PROPERTIES);
+        serOpts.put("long-schema-id", "true");
+        final AvroRowDataSerializationSchema expectedSer =
+                new AvroRowDataSerializationSchema(
+                        ROW_TYPE,
+                        ConfluentRegistryAvroSerializationSchema.forGeneric(
+                                SUBJECT,
+                                AvroSchemaConverter.convertToSchema(ROW_TYPE),
+                                REGISTRY_URL,
+                                serOpts),
+                        RowDataToAvroConverters.createConverter(ROW_TYPE));
+
+        Map<String, String> sinkOpts = new HashMap<>(getOptionalProperties());
+        sinkOpts.put("avro-confluent.long-schema-id", "true");
+        final DynamicTableSink actualSink = createTableSink(SCHEMA, sinkOpts);
+        assertThat(actualSink, instanceOf(TestDynamicTableFactory.DynamicTableSinkMock.class));
+        TestDynamicTableFactory.DynamicTableSinkMock sinkMock =
+                (TestDynamicTableFactory.DynamicTableSinkMock) actualSink;
+
+        SerializationSchema<RowData> actualSer =
+                sinkMock.valueFormat.createRuntimeEncoder(null, SCHEMA.toPhysicalRowDataType());
+
+        assertEquals(expectedSer, actualSer);
+    }
+
+    @Test
+    public void testDeserializationSchemaWithLongSchemaId() {
+        Map<String, String> deserOpts = new HashMap<>(EXPECTED_OPTIONAL_PROPERTIES);
+        deserOpts.put("long-schema-id", "true");
+        final AvroRowDataDeserializationSchema expectedDeser =
+                new AvroRowDataDeserializationSchema(
+                        ConfluentRegistryAvroDeserializationSchema.forGeneric(
+                                AvroSchemaConverter.convertToSchema(ROW_TYPE),
+                                REGISTRY_URL,
+                                deserOpts),
+                        AvroToRowDataConverters.createRowConverter(ROW_TYPE),
+                        InternalTypeInfo.of(ROW_TYPE));
+
+        Map<String, String> sourceOpts = new HashMap<>(getOptionalProperties());
+        sourceOpts.put("avro-confluent.long-schema-id", "true");
+        final DynamicTableSource actualSource = createTableSource(SCHEMA, sourceOpts);
+        assertThat(actualSource, instanceOf(TestDynamicTableFactory.DynamicTableSourceMock.class));
+        TestDynamicTableFactory.DynamicTableSourceMock scanSourceMock =
+                (TestDynamicTableFactory.DynamicTableSourceMock) actualSource;
+
+        DeserializationSchema<RowData> actualDeser =
+                scanSourceMock.valueFormat.createRuntimeDecoder(
+                        ScanRuntimeProviderContext.INSTANCE, SCHEMA.toPhysicalRowDataType());
+
+        assertEquals(expectedDeser, actualDeser);
+    }
+
     // ------------------------------------------------------------------------
     //  Utilities
     // ------------------------------------------------------------------------

@@ -28,6 +28,8 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.flink.formats.avro.registry.confluent.AvroConfluentFormatOptions.LONG_SCHEMA_ID;
+
 /**
  * A {@link SchemaCoder.SchemaCoderProvider} that uses a cached schema registry client underneath.
  */
@@ -37,6 +39,7 @@ class CachedSchemaCoderProvider implements SchemaCoder.SchemaCoderProvider {
     private static final long serialVersionUID = 8610401613495438381L;
     private final String subject;
     private final String url;
+    private final boolean isSchemaIdLong;
     private final int identityMapCapacity;
     private final @Nullable Map<String, ?> registryConfigs;
 
@@ -53,12 +56,20 @@ class CachedSchemaCoderProvider implements SchemaCoder.SchemaCoderProvider {
         this.url = Objects.requireNonNull(url);
         this.identityMapCapacity = identityMapCapacity;
         this.registryConfigs = registryConfigs;
+        // Capture and remove the long schema ID property if present
+        if (registryConfigs != null && registryConfigs.containsKey(LONG_SCHEMA_ID.key())) {
+            isSchemaIdLong =
+                    Boolean.parseBoolean((String) registryConfigs.get(LONG_SCHEMA_ID.key()));
+        } else {
+            isSchemaIdLong = false;
+        }
     }
 
     @Override
     public SchemaCoder get() {
         return new ConfluentSchemaRegistryCoder(
                 this.subject,
+                isSchemaIdLong,
                 new CachedSchemaRegistryClient(url, identityMapCapacity, registryConfigs));
     }
 
@@ -74,11 +85,12 @@ class CachedSchemaCoderProvider implements SchemaCoder.SchemaCoderProvider {
         return identityMapCapacity == that.identityMapCapacity
                 && Objects.equals(subject, that.subject)
                 && url.equals(that.url)
+                && isSchemaIdLong == that.isSchemaIdLong
                 && Objects.equals(registryConfigs, that.registryConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(subject, url, identityMapCapacity, registryConfigs);
+        return Objects.hash(subject, url, isSchemaIdLong, identityMapCapacity, registryConfigs);
     }
 }

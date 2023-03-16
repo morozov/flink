@@ -37,6 +37,7 @@ public class ConfluentSchemaRegistryCoder implements SchemaCoder {
 
     private final SchemaRegistryClient schemaRegistryClient;
     private String subject;
+    private boolean isSchemaIdLong;
     private static final int CONFLUENT_MAGIC_BYTE = 0;
 
     /**
@@ -56,9 +57,30 @@ public class ConfluentSchemaRegistryCoder implements SchemaCoder {
      * schema registry.
      *
      * @param schemaRegistryClient client to connect schema registry
+     * @param subject subject of schema registry to produce
+     * @param isSchemaIdLong flag to interpret the schemaId as a long value instead of an int
+     */
+    public ConfluentSchemaRegistryCoder(
+            String subject, boolean isSchemaIdLong, SchemaRegistryClient schemaRegistryClient) {
+        this.schemaRegistryClient = schemaRegistryClient;
+        this.subject = subject;
+        this.isSchemaIdLong = isSchemaIdLong;
+    }
+
+    /**
+     * Creates {@link SchemaCoder} that uses provided {@link SchemaRegistryClient} to connect to
+     * schema registry.
+     *
+     * @param schemaRegistryClient client to connect schema registry
      */
     public ConfluentSchemaRegistryCoder(SchemaRegistryClient schemaRegistryClient) {
         this.schemaRegistryClient = schemaRegistryClient;
+    }
+
+    public ConfluentSchemaRegistryCoder(
+            SchemaRegistryClient schemaRegistryClient, boolean isSchemaIdLong) {
+        this.schemaRegistryClient = schemaRegistryClient;
+        this.isSchemaIdLong = isSchemaIdLong;
     }
 
     @Override
@@ -68,7 +90,16 @@ public class ConfluentSchemaRegistryCoder implements SchemaCoder {
         if (dataInputStream.readByte() != 0) {
             throw new IOException("Unknown data format. Magic number does not match");
         } else {
-            int schemaId = dataInputStream.readInt();
+            int schemaId;
+            if (isSchemaIdLong) {
+                long schemaIdVal = dataInputStream.readLong();
+                if (schemaIdVal > Integer.MAX_VALUE) {
+                    throw new IOException("SchemaId is greater than MAX_INT");
+                }
+                schemaId = (int) schemaIdVal;
+            } else {
+                schemaId = dataInputStream.readInt();
+            }
 
             try {
                 return schemaRegistryClient.getById(schemaId);
@@ -84,7 +115,12 @@ public class ConfluentSchemaRegistryCoder implements SchemaCoder {
         try {
             int registeredId = schemaRegistryClient.register(subject, schema);
             out.write(CONFLUENT_MAGIC_BYTE);
-            byte[] schemaIdBytes = ByteBuffer.allocate(4).putInt(registeredId).array();
+            byte[] schemaIdBytes;
+            if (isSchemaIdLong) {
+                schemaIdBytes = ByteBuffer.allocate(8).putLong(registeredId).array();
+            } else {
+                schemaIdBytes = ByteBuffer.allocate(4).putInt(registeredId).array();
+            }
             out.write(schemaIdBytes);
         } catch (RestClientException e) {
             throw new IOException("Could not register schema in registry", e);

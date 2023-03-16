@@ -49,6 +49,13 @@ public class AvroConfluentFormatOptions {
                                     + "is used as the value or key format. But for other connectors (e.g. 'filesystem'), "
                                     + "the subject option is required when used as sink.");
 
+    public static final ConfigOption<Boolean> LONG_SCHEMA_ID =
+            ConfigOptions.key("long-schema-id")
+                    .booleanType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Should the schema id be treated as a 'long' instead of an 'int'");
+
     // --------------------------------------------------------------------------------------------
     // Commonly used options maintained by Flink for convenience
     // --------------------------------------------------------------------------------------------
