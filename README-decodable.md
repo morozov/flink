@@ -30,17 +30,21 @@ The `decodable-preview-main` is not in use anymore.
 For the future, we plan to periodically back up this git repository (as a repository with all branches) to S3, in case of accidential force-pushes.
 
 
-## Approving changes
+## Contributing & Approving Changes
 
 Every change in this repository has to go through an approval process. For compliance reasons (GDPR & SOC2), we need to follow this rule:
 
 > System changes are approved by at least 1 independent person prior to deployment into production.
 
-Any change that requires pushing a new branch to this repo has do be done through a GitHub issues ticket and a personal fork of this repo.
-So in order to propose a new branch to be pushed to this repo, do the following
-1. Push the branch to your personal fork of this repo
-2. Open an issue with a link to the branch, ask for somebody to approve it
-3. Push the branch to the repo.
+Any change that requires pushing a new branch to this repo has do be done through a **GitHub issues ticket** and a **personal fork** of this repo.
+So in order to propose a new branch to be pushed to this repo, do the following:
+1. Contribute your changes to the corresponding `decodable-flink-<current_flink_version>` branch via the normal PR review process.
+   * For example, if Decodable is running flink 1.15, contribute your changes to the `decodable-flink-1.15` branch.
+2. If you haven't already, create a personal fork of decodable-flink.
+3. Create a branch off `decodable-flink-<current_flink_version>` in your personal fork. Use the `tools/change-version.sh` script to change the flink version from `*-SNAPSHOT` to your target version in all (sub)project POM's.
+4. Open a GH issue with a link to the branch, ask for somebody to approve it.
+5. Push the branch to decodable-flink.
+   * CI will push the new version to codeartifact.
 
 
 ## Using a local development version of Flink in a local decodable build
