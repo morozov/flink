@@ -36,6 +36,7 @@ import java.util.Set;
 
 import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.AWS_REGION;
 import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.SINK_FAIL_ON_ERROR;
+import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.SINK_LOG_PARTIAL_ERRORS;
 import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER;
 import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.SINK_PARTITIONER_FIELD_DELIMITER;
 import static org.apache.flink.connector.kinesis.table.KinesisConnectorOptions.STREAM;
@@ -82,6 +83,8 @@ public class KinesisDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory
         addAsyncOptionsToBuilder(properties, builder);
         Optional.ofNullable((Boolean) properties.get(SINK_FAIL_ON_ERROR.key()))
                 .ifPresent(builder::setFailOnError);
+        Optional.ofNullable((Boolean) properties.get(SINK_LOG_PARTIAL_ERRORS.key()))
+                .ifPresent(builder::setLogPartialSinkErrors);
         return builder.build();
     }
 
@@ -105,6 +108,7 @@ public class KinesisDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory
         options.add(SINK_PARTITIONER);
         options.add(SINK_PARTITIONER_FIELD_DELIMITER);
         options.add(SINK_FAIL_ON_ERROR);
+        options.add(SINK_LOG_PARTIAL_ERRORS);
         return KinesisStreamsConnectorOptionsUtils.KinesisProducerOptionsMapper.addDeprecatedKeys(
                 options);
     }

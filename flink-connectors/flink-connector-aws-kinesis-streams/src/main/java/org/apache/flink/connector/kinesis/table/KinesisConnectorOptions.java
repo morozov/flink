@@ -91,4 +91,11 @@ public class KinesisConnectorOptions extends AsyncSinkConnectorOptions {
                     .defaultValue(false)
                     .withDescription(
                             "Determines whether an exception should fail the job, otherwise failed requests are retried.");
+
+    public static final ConfigOption<Boolean> SINK_LOG_PARTIAL_ERRORS =
+            ConfigOptions.key("sink.log-partial-errors")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Log partial errors thrown by Kinesis that do not outright fail the sink. Should only be set when `sink.fail-on-error=false`");
 }

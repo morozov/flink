@@ -68,8 +68,10 @@ public class KinesisStreamsSinkBuilder<InputT>
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
     private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1 * 1024 * 1024;
     private static final boolean DEFAULT_FAIL_ON_ERROR = false;
+    private static final boolean DEFAULT_SINK_LOG_PARTIAL_ERRORS = false;
 
     private Boolean failOnError;
+    private Boolean logPartialSinkErrors;
     private String streamName;
     private Properties kinesisClientProperties;
     private SerializationSchema<InputT> serializationSchema;
@@ -107,6 +109,11 @@ public class KinesisStreamsSinkBuilder<InputT>
         return this;
     }
 
+    public KinesisStreamsSinkBuilder<InputT> setLogPartialSinkErrors(boolean logPartialSinkErrors) {
+        this.logPartialSinkErrors = logPartialSinkErrors;
+        return this;
+    }
+
     public KinesisStreamsSinkBuilder<InputT> setKinesisClientProperties(
             Properties kinesisClientProperties) {
         this.kinesisClientProperties = kinesisClientProperties;
@@ -128,6 +135,7 @@ public class KinesisStreamsSinkBuilder<InputT>
                 Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
                 Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
                 Optional.ofNullable(failOnError).orElse(DEFAULT_FAIL_ON_ERROR),
+                Optional.ofNullable(logPartialSinkErrors).orElse(DEFAULT_SINK_LOG_PARTIAL_ERRORS),
                 streamName,
                 Optional.ofNullable(kinesisClientProperties).orElse(new Properties()));
     }

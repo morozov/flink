@@ -93,6 +93,9 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
     /* Flag to whether fatally fail any time we encounter an exception when persisting records */
     private final boolean failOnError;
 
+    /* Flag to log partial errors (i.e. ones that don't crash the sink) returned by Kinesis */
+    private final boolean logPartialSinkErrors;
+
     KinesisStreamsSinkWriter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             Sink.InitContext context,
@@ -103,6 +106,7 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             boolean failOnError,
+            boolean logPartialSinkErrors,
             String streamName,
             Properties kinesisClientProperties) {
         this(
@@ -115,6 +119,7 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
                 failOnError,
+                logPartialSinkErrors,
                 streamName,
                 kinesisClientProperties,
                 Collections.emptyList());
@@ -130,6 +135,7 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             boolean failOnError,
+            boolean logPartialSinkErrors,
             String streamName,
             Properties kinesisClientProperties,
             Collection<BufferedRequestState<PutRecordsRequestEntry>> states) {
@@ -144,6 +150,7 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
                 maxRecordSizeInBytes,
                 states);
         this.failOnError = failOnError;
+        this.logPartialSinkErrors = logPartialSinkErrors;
         this.streamName = streamName;
         this.metrics = context.metricGroup();
         this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
@@ -218,6 +225,21 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
                 "KDS Sink failed to write and will retry {} entries to KDS",
                 response.failedRecordCount());
         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
+
+        if (logPartialSinkErrors) {
+            StringBuilder err = new StringBuilder();
+            for (PutRecordsResultEntry result : response.records()) {
+                if (result.errorMessage() != null && !result.errorMessage().isEmpty()) {
+                    err.append(result.toString()).append("\n");
+                }
+            }
+            if (err.length() > 0) {
+                LOG.warn("KDS sink partial failure logging:\n{}", err.toString());
+            } else {
+                LOG.warn(
+                        "Requests to Kinesis have failed but no error messages were included in the response. Consider logging all response results to diagnose this issue.");
+            }
+        }
 
         if (failOnError) {
             getFatalExceptionCons()
