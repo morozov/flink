@@ -20,6 +20,7 @@ package org.apache.flink.connector.kafka.sink;
 import org.apache.flink.api.connector.sink2.Committer;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.errors.InvalidPidMappingException;
 import org.apache.kafka.common.errors.InvalidTxnStateException;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.errors.RetriableException;
@@ -110,6 +111,15 @@ class KafkaCommitter implements Committer<KafkaCommittable>, Closeable {
                         e);
                 recyclable.ifPresent(Recyclable::close);
                 request.signalFailedWithKnownReason(e);
+            } catch (InvalidPidMappingException e) {
+                // We are ignoring the InvalidPidMappingException in Decodable. The exception is
+                // thrown when the Kafka producer (configured with EO) is restoring and trying to
+                // check if the transactions in state are properly committed.
+                // However, in most cases, the transaction timeout is shorter than the
+                // transaction id timeout, so if we run into this exception it makes no difference
+                // What actually matters is if we still have the transaction data available.
+                // That's why we are filtering out the InvalidPidMappingException.
+                LOG.info("Caught InvalidPidMappingException. Ignoring.", e);
             } catch (Exception e) {
                 LOG.error(
                         "Transaction ({}) encountered error and data has been potentially lost.",
