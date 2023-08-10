@@ -145,10 +145,12 @@ public class KafkaSourceReader<T>
                             // The offset commit here is needed by the external monitoring. It won't
                             // break Flink job's correctness if we fail to commit the offset here.
                             if (e != null) {
-                                kafkaSourceReaderMetrics.recordFailedCommit();
-                                LOG.warn(
-                                        "Failed to commit consumer offsets for checkpoint {}",
-                                        checkpointId,
+                                // TODO[DE-5022]: Until we upgrade to Flink 1.16+, we'll be affected
+                                // by KAFKA-13563. We throw an exception here to pick up the right
+                                // coordinator.
+                                throw new RuntimeException(
+                                        "Offset commit into consumer group failed, most likely because the coordinator is not available."
+                                                + "Triggering a Flink job restart until KAFKA-13563 is resolved.",
                                         e);
                             } else {
                                 LOG.debug(
