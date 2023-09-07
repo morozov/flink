@@ -33,7 +33,7 @@ under the License.
 
 	<properties>
 		<fs.s3.aws.version>1.11.951</fs.s3.aws.version>
-		<fs.hadoop-aws.decodable.version>3.2.2-dcd</fs.hadoop-aws.decodable.version>
+		<fs.hadoop-aws.decodable.version>3.2.2-deco2</fs.hadoop-aws.decodable.version>
 		<japicmp.skip>true</japicmp.skip>
 	</properties>
 
