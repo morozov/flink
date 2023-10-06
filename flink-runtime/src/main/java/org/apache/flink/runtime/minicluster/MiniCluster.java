@@ -154,9 +154,9 @@ public class MiniCluster implements AutoCloseableAsync {
     @GuardedBy("lock")
     private final List<TaskExecutor> taskManagers;
 
-    private final TerminatingFatalErrorHandlerFactory
-            taskManagerTerminatingFatalErrorHandlerFactory =
-                    new TerminatingFatalErrorHandlerFactory();
+    private final MiniClusterFatalErrorHandlerFactory
+            taskManagerMiniClusterFatalErrorHandlerFactory;
+
     private final Supplier<Reference<RpcSystem>> rpcSystemSupplier;
 
     private CompletableFuture<Void> terminationFuture;
@@ -235,12 +235,14 @@ public class MiniCluster implements AutoCloseableAsync {
     public MiniCluster(MiniClusterConfiguration miniClusterConfiguration) {
         this(
                 miniClusterConfiguration,
-                () -> Reference.owned(RpcSystem.load(miniClusterConfiguration.getConfiguration())));
+                () -> Reference.owned(RpcSystem.load(miniClusterConfiguration.getConfiguration())),
+                null);
     }
 
     public MiniCluster(
             MiniClusterConfiguration miniClusterConfiguration,
-            Supplier<Reference<RpcSystem>> rpcSystemSupplier) {
+            Supplier<Reference<RpcSystem>> rpcSystemSupplier,
+            @Nullable MiniClusterFatalErrorHandlerFactory miniClusterFatalErrorHandlerFactory) {
 
         this.miniClusterConfiguration =
                 checkNotNull(miniClusterConfiguration, "config may not be null");
@@ -250,6 +252,15 @@ public class MiniCluster implements AutoCloseableAsync {
                                 + 2
                                 + miniClusterConfiguration
                                         .getNumTaskManagers()); // common + JM + RM + TMs
+
+        if (miniClusterFatalErrorHandlerFactory == null) {
+            this.taskManagerMiniClusterFatalErrorHandlerFactory =
+                    new TerminatingMiniClusterFatalErrorHandlerFactory();
+        } else {
+            this.taskManagerMiniClusterFatalErrorHandlerFactory =
+                    miniClusterFatalErrorHandlerFactory;
+        }
+
         this.dispatcherResourceManagerComponents = new ArrayList<>(1);
 
         // There shouldn't be any lost messages between the MiniCluster and the Flink components
@@ -738,7 +749,7 @@ public class MiniCluster implements AutoCloseableAsync {
                             useLocalCommunication(),
                             ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
                             workingDirectory.createSubWorkingDirectory("tm_" + taskManagers.size()),
-                            taskManagerTerminatingFatalErrorHandlerFactory.create(
+                            taskManagerMiniClusterFatalErrorHandlerFactory.create(
                                     taskManagers.size()));
 
             taskExecutor.start();
@@ -1380,7 +1391,8 @@ public class MiniCluster implements AutoCloseableAsync {
         FileOutputFormat.initDefaultsFromConfiguration(configuration);
     }
 
-    private class TerminatingFatalErrorHandler implements FatalErrorHandler {
+    /** Handler for TaskManager failures. */
+    public class TerminatingFatalErrorHandler implements FatalErrorHandler {
 
         private final int index;
 
@@ -1410,7 +1422,14 @@ public class MiniCluster implements AutoCloseableAsync {
         }
     }
 
-    private class TerminatingFatalErrorHandlerFactory {
+    /** Error handler factory. */
+    public interface MiniClusterFatalErrorHandlerFactory {
+        FatalErrorHandler create(int index);
+    }
+
+    /** Shut down TM on fatal error. */
+    public class TerminatingMiniClusterFatalErrorHandlerFactory
+            implements MiniClusterFatalErrorHandlerFactory {
 
         /**
          * Create a new {@link TerminatingFatalErrorHandler} for the {@link TaskExecutor} with the
@@ -1421,7 +1440,7 @@ public class MiniCluster implements AutoCloseableAsync {
          * @return {@link TerminatingFatalErrorHandler} for the given index
          */
         @GuardedBy("lock")
-        private TerminatingFatalErrorHandler create(int index) {
+        public FatalErrorHandler create(int index) {
             return new TerminatingFatalErrorHandler(index);
         }
     }

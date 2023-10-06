@@ -223,7 +223,8 @@ public class MiniClusterResource extends ExternalResource {
                         .build();
 
         miniCluster =
-                new MiniCluster(miniClusterConfiguration, () -> Reference.borrowed(rpcSystem));
+                new MiniCluster(
+                        miniClusterConfiguration, () -> Reference.borrowed(rpcSystem), null);
 
         miniCluster.start();
 
