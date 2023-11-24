@@ -23,7 +23,9 @@ import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.ListSerializer;
+import org.apache.flink.metrics.Gauge;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.streaming.api.operators.TimestampedCollector;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
@@ -90,6 +92,7 @@ public class SinkUpsertMaterializer extends TableStreamOperator<RowData>
     // Reused ProjectedRowData for comparing upsertKey if hasUpsertKey.
     private transient ProjectedRowData upsertKeyProjectedRow1;
     private transient ProjectedRowData upsertKeyProjectedRow2;
+    private int listSizeMax;
 
     public SinkUpsertMaterializer(
             StateTtlConfig ttlConfig,
@@ -131,6 +134,15 @@ public class SinkUpsertMaterializer extends TableStreamOperator<RowData>
         }
         this.state = getRuntimeContext().getState(descriptor);
         this.collector = new TimestampedCollector<>(output);
+
+        this.listSizeMax = 0;
+        StreamingRuntimeContext runCtx = getRuntimeContext();
+        if (runCtx != null) {
+            runCtx.getMetricGroup().gauge("maxlistsize", (Gauge<Integer>) () -> listSizeMax);
+            LOG.info("Registered 'maxlistsize' metric");
+        } else {
+            LOG.info("No 'maxlistsize' metric registered");
+        }
     }
 
     @Override
@@ -139,6 +151,11 @@ public class SinkUpsertMaterializer extends TableStreamOperator<RowData>
         List<RowData> values = state.value();
         if (values == null) {
             values = new ArrayList<>(2);
+        }
+        this.listSizeMax = Math.max(values.size(), listSizeMax);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("state size {}", values.size());
         }
 
         switch (row.getRowKind()) {
