@@ -1,7 +1,9 @@
 name: Decodable Flink CI
 on:
-  - pull_request
-  - push
+  pull_request:
+  push:
+    branches:
+      - 'decodable-*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
