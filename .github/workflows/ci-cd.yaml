@@ -21,6 +21,11 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
           cache: maven
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -29,6 +34,9 @@ jobs:
           aws-region: us-west-2
       - name: Fetch AWS CodeArtifact token
         run: echo CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain decodable --domain-owner 671293015970 --query authorizationToken --output text ) >> $GITHUB_ENV
+      - name: Docker auth
+        run: |
+          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 671293015970.dkr.ecr.us-west-2.amazonaws.com
       - name: maven-settings-xml-action
         uses: whelk-io/maven-settings-xml-action@v20
         with:
@@ -53,7 +61,16 @@ jobs:
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
           echo "FLINK_DIST_NAME=decodable-flink-${{ env.FLINK_VERSION }}-$git_hash.tgz" >> $GITHUB_ENV
+      - name: Flink Version
+        run: |
+          FLINK_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "FLINK_VERSION=$FLINK_VERSION" >> $GITHUB_ENV
+          echo "IMAGE_IDENTIFIER=java16" >> $GITHUB_ENV
       - name: Decodable Flink dist
+        run: |
+          set -x
+          tar -czf ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} -C ${{ github.workspace }}/build-target/ .
+      - name: Upload Decodable Flink dist to S3
         if: github.event_name != 'pull_request'
         run: |
           set -x
@@ -61,8 +78,22 @@ jobs:
           if [[ "${{ github.ref_name }}" =~ ^decodable.* ]]; then
             TARGET="dist"
           fi
-          tar -czf ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} -C ${{ github.workspace }}/build-target/ .
           aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/${TARGET}/${{ github.ref_name }}/
+      - name: Move Decodable Flink dist
+        run: |
+          set -x
+          mv ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} ${{ github.workspace }}/tools/decodable/flink.tgz
+     # See for Docker: https://github.com/docker/build-push-action
+      - name: Build and push (Java-Flink)
+        uses: docker/build-push-action@v2
+        with:
+          file: ${{ github.workspace }}/tools/decodable/Dockerfile
+          context: ${{ github.workspace }}/tools/decodable/
+          platforms: linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            FLINK_DIST=flink.tgz
+          tags: 671293015970.dkr.ecr.us-west-2.amazonaws.com/decodable-product-flink-base:${{ env.FLINK_VERSION }}-${{ env.IMAGE_IDENTIFIER }}
       - name: Deploy maven artifacts
         if: github.event_name != 'pull_request'
         run: ./mvnw deploy -DskipTests -Dscala-2.12 -Ddocs-and-source
