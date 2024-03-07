@@ -57,13 +57,8 @@ RUN groupadd --system --gid=9999 flink && \
 WORKDIR $FLINK_HOME
 
 # Install Flink
-ARG FLINK_DIST
-COPY $FLINK_DIST $FLINK_HOME/flink.tgz
-RUN set -ex; \
-  tar -xf flink.tgz --strip-components=1; \
-  rm flink.tgz; \
-  \
-  chown -R flink:flink .;
+ARG FLINK_DIST_DIR
+COPY --chown=flink:flink $FLINK_DIST_DIR $FLINK_HOME/
 
 # remove web frontend files from lib flink dist
 #RUN zip -d $FLINK_HOME/lib/flink-dist*.jar org/apache/flink/runtime/webmonitor/\*

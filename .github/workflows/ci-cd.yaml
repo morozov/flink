@@ -79,20 +79,16 @@ jobs:
             TARGET="dist"
           fi
           aws s3 cp ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} s3://decodable-flink-dist/${TARGET}/${{ github.ref_name }}/
-      - name: Move Decodable Flink dist
-        run: |
-          set -x
-          mv ${{ github.workspace }}/${{ env.FLINK_DIST_NAME }} ${{ github.workspace }}/tools/decodable/flink.tgz
      # See for Docker: https://github.com/docker/build-push-action
       - name: Build and push (Java-Flink)
         uses: docker/build-push-action@v2
         with:
           file: ${{ github.workspace }}/tools/decodable/Dockerfile
-          context: ${{ github.workspace }}/tools/decodable/
+          context: ${{ github.workspace }}/build-target/
           platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
-            FLINK_DIST=flink.tgz
+            FLINK_DIST_DIR=.
           tags: 671293015970.dkr.ecr.us-west-2.amazonaws.com/decodable-product-flink-base:${{ env.FLINK_VERSION }}-${{ env.IMAGE_IDENTIFIER }}
       - name: Deploy maven artifacts
         if: github.event_name != 'pull_request'
